@@ -1,0 +1,22 @@
+Evaluation
+Belz and Kow 2010 : Preference-based evaluation
+Nenkova and McKeown 2011 : discussion on PYRAMID evaluation method
+Siddarthan and Katso 2012 : Evaluating NLG systems using Magnitude Estimation
+Liu et al. 2016 : How NOT To Evaluate Your Dialogue System: An Empirical Study of Unsupervised Evaluation Metrics for Dialogue Response Generation.
+
+
+Look into GRU
+
+
+Attention
+The annotated transformer (SEAS Harvard)
+
+Hugging face github
+
+T5 text-to-text transfer transfomer
+https://github.com/google-research/text-to-text-transfer-transformer
+
+Tuto Transformers
+http://nlp.seas.harvard.edu/2018/04/03/attention.html
+http://jalammar.github.io/illustrated-transformer/
+
