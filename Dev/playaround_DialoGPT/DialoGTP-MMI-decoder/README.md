@@ -1,4 +1,4 @@
-# DialoGTP-MMI-decoder
+# Clone of DialoGTP-MMI-decoder
 This is a third party implementation of the MMI-decoder for [DialoGTP](https://github.com/microsoft/DialoGPT).
 
 It gives interesting responses, varying between funny, stupid and thoughtfull.
