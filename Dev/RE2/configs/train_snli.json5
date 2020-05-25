@@ -1,0 +1,9 @@
+{
+    name: 'benchmark',
+    __parents__: [
+        'default',
+        'data/snli',
+    ],
+    __repeat__: 1,
+    eval_file: 'test',
+}
