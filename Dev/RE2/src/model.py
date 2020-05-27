@@ -130,8 +130,8 @@ class Model:
     def process_data(self, batch):
         text1 = torch.LongTensor(batch['text1']).to(self.device)
         text2 = torch.LongTensor(batch['text2']).to(self.device)
-        mask1 = torch.ne(text1, self.args.padding).unsqueeze(2).to(self.device)
-        mask2 = torch.ne(text2, self.args.padding).unsqueeze(2).to(self.device)
+        mask1 = torch.ne(text1, self.args.padding).unsqueeze(2)
+        mask2 = torch.ne(text2, self.args.padding).unsqueeze(2)
         inputs = {
             'text1': text1,
             'text2': text2,

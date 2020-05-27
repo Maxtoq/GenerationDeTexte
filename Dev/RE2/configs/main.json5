@@ -3,16 +3,7 @@
         name: 'benchmark',
         __parents__: [
             'default',
-            'data/snli',
-        ],
-        __repeat__: 10,
-        eval_file: 'test',
-    },
-    {
-        name: 'benchmark',
-        __parents__: [
-            'default',
-            'data/scitail',
+            'data/wikiqa',
         ],
         __repeat__: 10,
         eval_file: 'test',
@@ -30,7 +21,16 @@
         name: 'benchmark',
         __parents__: [
             'default',
-            'data/wikiqa',
+            'data/scitail',
+        ],
+        __repeat__: 10,
+        eval_file: 'test',
+    },
+    {
+        name: 'benchmark',
+        __parents__: [
+            'default',
+            'data/snli',
         ],
         __repeat__: 10,
         eval_file: 'test',

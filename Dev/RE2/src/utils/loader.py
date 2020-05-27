@@ -27,7 +27,7 @@ def load_data(data_dir, split=None):
             split += '.txt'
         files = [os.path.join(data_dir, f'{split}')]
     for file in files:
-        with open(file) as f:
+        with open(file, encoding='utf8') as f:
             for line in f:
                 text1, text2, label = line.rstrip().split('\t')
                 data.append({
@@ -41,7 +41,7 @@ def load_data(data_dir, split=None):
 def load_embeddings(file, vocab, dim, lower, mode='freq'):
     embedding = np.zeros((len(vocab), dim))
     count = np.zeros((len(vocab), 1))
-    with open(file) as f:
+    with open(file, encoding='utf8') as f:
         for line in f:
             elems = line.rstrip().split()
             if len(elems) != dim + 1:
