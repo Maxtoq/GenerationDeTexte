@@ -19,6 +19,11 @@ class HumanAgent:
 class DialoGPTAgent:
     def __init__(self, name, device, half_p=False):
         self.name = name
+        self.device = device
+
+        self.num_samples = 10
+        self.top_k = 20
+        self.mmi_temp = 0.5
 
         self.tokenizer = GPT2Tokenizer(
             os.path.join(DIALOGPT_MODELS, 'vocab.json'), 
@@ -41,6 +46,90 @@ class DialoGPTAgent:
         )
 
         self.end_token = torch.tensor([[50256]], dtype=torch.long)
+
+        self.past_message_list = []
+
+    def append_message(self, message, truncate_length=64):
+        if message != '':
+            input_token = self.tokenizer.encode(message, return_tensors='pt')
+            input_token = torch.cat((input_token, self.end_token), dim=1)
+            self.past_message_list.append(input_token)
+
+        if len(self.past_message_list) == 0:
+            self.past_message_list.append(self.end_token)
+
+        # truncate
+        total_length = 0
+        for i, message in enumerate(reversed(self.past_message_list)):
+            total_length += message.shape[1]
+            if total_length > truncate_length:
+                self.past_message_list[:] = self.past_message_list[-i:]
+
+    def generate_message(self, output_token, past):
+        out = torch.tensor([[]], dtype=torch.long, device=self.device)
+
+        while True:
+            output_token, past = self.forward_model.forward(
+                output_token, past=past)
+            output_token = output_token[:, -1, :].float()
+            indices_to_remove = output_token < torch.topk(
+                    output_token, self.top_k)[0][..., -1, None]
+            output_token[indices_to_remove] = -float('Inf')
+            output_token = torch.multinomial(
+                F.softmax(output_token, dim=-1), num_samples=1)
+
+            out = torch.cat((out, output_token), dim=1)
+
+            if output_token.item() == self.end_token.item():
+                break
+
+        return out, past
+
+    def score_response(self, output_token, correct_token):
+        inputs = torch.cat((output_token, correct_token), dim=1)
+        mask = torch.full_like(output_token, -100, dtype=torch.long)
+        labels = torch.cat((mask, correct_token), dim=1)
+
+        loss, _, _ = self.reverse_model(inputs, labels=labels)
+
+        return -loss.float()
+
+    def get_response(self, last_message, focus_last_message=True):
+        self.append_message(last_message)
+        
+        total_input = torch.cat(self.past_message_list, dim=1).to(self.device)
+        if focus_last_message:
+            total_input_reversed = self.past_message_list[-1]
+        else:
+            total_input_reversed = torch.cat(
+                list(reversed(self.past_message_list)), dim=1)
+
+        past = None
+        if total_input.shape[1] > 1:
+            _, past = self.forward_model(total_input[:, :-1])
+
+        results = []
+        for i in range(self.num_samples):
+            result = self.generate_message(total_input[:, -1:], past)
+            score = self.score_response(
+                result[0].to(self.device), 
+                total_input_reversed.to(self.device)
+            )
+            results.append(result + (score,))
+
+        scores = torch.stack([x[2] for x in results], dim=0)
+        winner = torch.multinomial(
+            F.softmax(scores / self.mmi_temp, dim=0), num_samples=1).item()
+        # winner = torch.argmax(scores, dim=0)
+
+        out = results[winner][0]
+
+        generated_message = self.tokenizer.decode(
+            out.tolist()[0], skip_special_tokens=True)
+
+        print(self.name + ' >> ' + generated_message)
+
+        return generated_message
 
     @staticmethod
     def prepare_model(config, weights_path, device, half_p):
@@ -72,14 +161,19 @@ def main(args):
     agent1 = get_agent(args.agent1, 1, device, args.half)
     agent2 = get_agent(args.agent2, 2, device, args.half)
 
-    last_message = None
+    last_message = ''
     while True:
         last_message = agent1.get_response(last_message)
+        if last_message == 'quit':
+            break
         last_message = agent2.get_response(last_message)
+        if last_message == 'quit':
+            break
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Have a conversation with different agents.')
+    parser = argparse.ArgumentParser(
+        description='Have a conversation with different agents.')
     parser.add_argument('--half', 
         help='enable half precision (FP16) for model computation.',
         action='store_true'
